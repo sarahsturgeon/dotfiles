@@ -22,10 +22,19 @@ local plugins = {
     { "github/copilot.vim" },
     { "folke/tokyonight.nvim", lazy = false, priority = 1000, opts = {} },
     { "neoclide/coc.nvim", branch = "release" },
-    { "ryanoasis/vim-devicons", lazy = true },
-    { "nvim-tree/nvim-web-devicons", lazy = true },
     { "EinfachToll/DidYouMean" },
     { "Yggdroot/indentLine" },
+    {
+      "utilyre/barbecue.nvim",
+      name = "barbecue",
+      version = "*",
+      dependencies = {
+        "SmiteshP/nvim-navic",
+        "nvim-tree/nvim-web-devicons", -- optional dependency
+      },
+      opts = {
+      },
+    },
     {
         "nvim-tree/nvim-tree.lua",
         keys = {
@@ -35,10 +44,10 @@ local plugins = {
             require( "nvim-tree" ).setup()
         end
     },
-    { "tpope/vim-surround" },
-    { "mtth/scratch.vim" },
+    -- { "mtth/scratch.vim" },
     { "dense-analysis/ale" },
     { "nvim-lualine/lualine.nvim" },
+    { "ggandor/leap.nvim" },
     {
         "romgrk/barbar.nvim",
         dependencies = {
@@ -51,9 +60,10 @@ local plugins = {
         },
     },
     { "nvim-lua/plenary.nvim" },
+    { "mateuszwieloch/automkdir.nvim" },
     {
         "nvim-telescope/telescope.nvim",
-        tag = "0.1.1",
+        tag = "0.1.6",
         keys = {
             { "<C-i>", "<cmd>Telescope find_files<CR>", desc = "Find Files" },
             { "<C-o>", "<cmd>Telescope buffers<CR>", desc = "Find Buffer" },
@@ -88,6 +98,7 @@ local plugins = {
     { "metakirby5/codi.vim",                      cmd = "Codi" },
     { "google/vim-searchindex",                   event = "BufReadPost" },
     { "mg979/vim-visual-multi",                   event = "BufReadPost" },
+    { "petertriho/nvim-scrollbar",                event = "BufReadPost" },
     { "tpope/vim-sleuth",                         event = "InsertEnter" },
     { "tpope/vim-fugitive",                       event = "BufWritePost" },
     { "mhinz/vim-signify",                        event = "BufWritePost" },
@@ -194,10 +205,10 @@ vim.g.signify_cursorhold_normal = 1
 vim.g.signify_cursorhold_insert = 1
 
 local autocmds = {
-    { event = "FileType", pattern = "javascript",                                 cmd = "let g:jsx_ext_required = 0" },
-    { event = "FileType", pattern = "html,ruby,javascript,typescript,jsx,svelte", cmd = "setlocal ts=2 sts=2 sw=2" },
-    { event = "FileType", pattern = "python",                                     cmd = "setlocal ts=4 sts=4 sw=4 tw=0" },
-    { event = "FileType", pattern = "css,yaml",                                   cmd =
+    { event = "FileType", pattern = "javascript",                                     cmd = "let g:jsx_ext_required = 0" },
+    { event = "FileType", pattern = "html,ruby,javascript,typescript,jsx,tsx,svelte", cmd = "setlocal ts=2 sts=2 sw=2" },
+    { event = "FileType", pattern = "python",                                         cmd = "setlocal ts=4 sts=4 sw=4 tw=0" },
+    { event = "FileType", pattern = "css,yaml",                                       cmd =
     "setlocal ts=2 sts=2 sw=2 expandtab" }
 }
 
@@ -244,8 +255,8 @@ vim.api.nvim_create_autocmd( "CursorHold", {
     desc = "Highlight symbol under cursor on CursorHold"
 } )
 
-vim.g.loaded_netrw = 1
-vim.g.loaded_netrwPlugin = 1
+-- vim.g.loaded_netrw = 1
+-- vim.g.loaded_netrwPlugin = 1
 
 require( "lualine" ).setup( {
     options = {
@@ -283,6 +294,7 @@ require( "lualine" ).setup( {
 } )
 
 
+-- For barbar?
 require( "bufferline" ).setup( {
     animation = true,
     auto_hide = true,
@@ -299,16 +311,33 @@ vim.keymap.set( "n", "<C-o>", "<Cmd>BufferPick<CR>", { noremap = true, silent = 
 vim.keymap.set( "n", "<C-h>", "<Cmd>BufferPrevious<CR>", { noremap = true, silent = true } )
 vim.keymap.set( "n", "<C-l>", "<Cmd>BufferNext<CR>", { noremap = true, silent = true } )
 
-local function on_stderr( _, data )
-    if not data then return end
-    if #data == 0 then return end
-    if #data == 1 and #data[1] == 0 then return end
+local function open_nvim_tree(data)
 
-    print( table.concat( data, "\n" ) )
-    vim.api.nvim_err_writeln( "Error pulling libgmod (:messages to see output)" )
+  -- buffer is a directory
+  local directory = vim.fn.isdirectory(data.file) == 1
+
+  if not directory then
+    return
+  end
+
+  -- create a new, empty buffer
+  vim.cmd.enew()
+
+  -- wipe the directory buffer
+  vim.cmd.bw(data.buf)
+
+  -- change to the directory
+  vim.cmd.cd(data.file)
+
+  -- open the tree
+  require("nvim-tree.api").tree.open()
 end
 
-vim.fn.jobstart(
-"timeout --signal=KILL 10s git pull --quiet --recurse-submodules --no-rebase origin master",
-{ cwd = "/home/brandon/Code/dev/libgmod", on_stderr = on_stderr }
-)
+vim.api.nvim_create_autocmd({ "VimEnter" }, { callback = open_nvim_tree })
+
+-- Require leap and set its primary keybind to "r"
+require( "leap" )
+vim.keymap.set( "n",          "r", "<Plug>(leap)" )
+vim.keymap.set( "n",          "R", "<Plug>(leap-from-window)" )
+vim.keymap.set( { "x", "o" }, "r", "<Plug>(leap-forward)" )
+vim.keymap.set( { "x", "o" }, "R", "<Plug>(leap-backward)" )
