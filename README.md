@@ -114,19 +114,13 @@ sudo apt install gping;
 
 ---
 
-### [dog](https://github.com/ogham/dog) :dog:
+### [doggo](coreutils gnu-sed git) :dog:
 - Better `dig`; a command-line DNS client
 ```bash
-mkdir $HOME/dog_build;
-cd $HOME/dog_build;
-curl -L -o dog.zip https://github.com/ogham/dog/releases/download/v0.1.0/dog-v0.1.0-x86_64-unknown-linux-gnu.zip;
-unzip dog.zip;
-sudo mv bin/dog /usr/local/bin/dog;
-sudo chown root:root /usr/local/bin/dog;
-sudo chmod +x /usr/locla/bin/dog;
-
-rm -rf $HOME/dog_build;
-cd -;
+curl -fsSL https://raw.githubusercontent.com/mr-karan/doggo/main/install.sh | sh
+```
+```zsh
+brew install doggo
 ```
 
 ---
