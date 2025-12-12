@@ -114,7 +114,7 @@ sudo apt install gping;
 
 ---
 
-### [doggo](coreutils gnu-sed git) :dog:
+### [doggo](https://github.com/mr-karan/doggo) :dog:
 - Better `dig`; a command-line DNS client
 ```bash
 curl -fsSL https://raw.githubusercontent.com/mr-karan/doggo/main/install.sh | sh
