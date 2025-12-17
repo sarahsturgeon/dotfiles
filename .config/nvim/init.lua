@@ -21,20 +21,12 @@ local plugins = {
     -- { "dstein64/vim-startuptime" },
     { "github/copilot.vim" },
     { "folke/tokyonight.nvim", lazy = false, priority = 1000, opts = {} },
-    { "neoclide/coc.nvim", branch = "release" },
+    { "ryanoasis/vim-devicons", lazy = true },
+    { "kyazdani42/nvim-web-devicons", lazy = true },
+    { "MunifTanjim/nui.nvim" },
+    -- { "pieces-app/plugin_neovim" },
     { "EinfachToll/DidYouMean" },
     { "Yggdroot/indentLine" },
-    {
-      "utilyre/barbecue.nvim",
-      name = "barbecue",
-      version = "*",
-      dependencies = {
-        "SmiteshP/nvim-navic",
-        "nvim-tree/nvim-web-devicons", -- optional dependency
-      },
-      opts = {
-      },
-    },
     {
         "nvim-tree/nvim-tree.lua",
         keys = {
@@ -44,10 +36,9 @@ local plugins = {
             require( "nvim-tree" ).setup()
         end
     },
-    -- { "mtth/scratch.vim" },
-    { "dense-analysis/ale" },
+    { "tpope/vim-surround" },
+    { "mtth/scratch.vim" },
     { "nvim-lualine/lualine.nvim" },
-    { "ggandor/leap.nvim" },
     {
         "romgrk/barbar.nvim",
         dependencies = {
@@ -60,10 +51,9 @@ local plugins = {
         },
     },
     { "nvim-lua/plenary.nvim" },
-    { "mateuszwieloch/automkdir.nvim" },
     {
         "nvim-telescope/telescope.nvim",
-        tag = "0.1.6",
+        tag = "0.1.5",
         keys = {
             { "<C-i>", "<cmd>Telescope find_files<CR>", desc = "Find Files" },
             { "<C-o>", "<cmd>Telescope buffers<CR>", desc = "Find Buffer" },
@@ -81,27 +71,37 @@ local plugins = {
         end
     },
     { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
-    { "nvim-treesitter/nvim-treesitter",          run = ":TSUpdate" },
     { "mxw/vim-jsx",                              ft = "javascript" },
-    { "pangloss/vim-javascript",                  ft = "javascript" },
     { "lfilho/cosco.vim",                         ft = "javascript" },
-    { "wuelnerdotexe/vim-astro",                  ft = "astro" },
-    { "yaegassy/coc-astro",                       ft = "astro", build = "yarn install --frozen-lockfile" },
     { "othree/html5.vim",                         ft = "html" },
-    { "evanleck/vim-svelte",                      ft = { "javascript", "svelte" }, branch = "main" },
-    { "hashivim/vim-terraform",                   ft = { "terraform", "tf" } },
-    { "tpope/vim-markdown",                       ft = "markdown" },
     { "leafo/moonscript-vim",                     ft = "moonscript" },
-    { "slim-template/vim-slim",                   ft = "slim" },
     { "tpope/vim-endwise",                        ft = "ruby" },
     { "cfc-servers/gluafixer.vim",                ft = "lua" },
     { "metakirby5/codi.vim",                      cmd = "Codi" },
     { "google/vim-searchindex",                   event = "BufReadPost" },
     { "mg979/vim-visual-multi",                   event = "BufReadPost" },
-    { "petertriho/nvim-scrollbar",                event = "BufReadPost" },
     { "tpope/vim-sleuth",                         event = "InsertEnter" },
     { "tpope/vim-fugitive",                       event = "BufWritePost" },
     { "mhinz/vim-signify",                        event = "BufWritePost" },
+
+    -- LSP
+    {
+        "williamboman/mason.nvim",
+        build = ":MasonUpdate"
+    },
+    "neovim/nvim-lspconfig",
+
+    -- Autocompletion
+    "hrsh7th/cmp-nvim-lsp",
+    "hrsh7th/cmp-buffer",
+    "hrsh7th/cmp-path",
+    "hrsh7th/cmp-cmdline",
+    "hrsh7th/nvim-cmp",
+    "saadparwaiz1/cmp_luasnip",
+
+    -- Snippets
+    "L3MON4D3/LuaSnip",
+    "rafamadriz/friendly-snippets",
 }
 
 require( "lazy" ).setup( plugins, opts )
@@ -205,11 +205,10 @@ vim.g.signify_cursorhold_normal = 1
 vim.g.signify_cursorhold_insert = 1
 
 local autocmds = {
-    { event = "FileType", pattern = "javascript",                                     cmd = "let g:jsx_ext_required = 0" },
-    { event = "FileType", pattern = "html,ruby,javascript,typescript,jsx,tsx,svelte", cmd = "setlocal ts=2 sts=2 sw=2" },
-    { event = "FileType", pattern = "python",                                         cmd = "setlocal ts=4 sts=4 sw=4 tw=0" },
-    { event = "FileType", pattern = "css,yaml",                                       cmd =
-    "setlocal ts=2 sts=2 sw=2 expandtab" }
+    { event = "FileType", pattern = "javascript",                                 cmd = "let g:jsx_ext_required = 0" },
+    { event = "FileType", pattern = "html,ruby,javascript,typescript,jsx,svelte", cmd = "setlocal ts=4 sts=4 sw=4" },
+    { event = "FileType", pattern = "python",                                     cmd = "setlocal ts=4 sts=4 sw=4 tw=0" },
+    { event = "FileType", pattern = "css,yaml",                                   cmd = "setlocal ts=2 sts=2 sw=2 expandtab" }
 }
 
 local autocmd_group = vim.api.nvim_create_augroup( "filetypes", { clear = true } )
@@ -223,40 +222,60 @@ for _, autocmd in pairs( autocmds ) do
 end
 
 vim.opt.tags = "tags"
-vim.g.ale_virtualtext_cursor = 0
+-- vim.g.ale_virtualtext_cursor = 0
 
-vim.keymap.set( "n", "[g", "<Plug>(coc-diagnostic-prev)", { silent = true } )
-vim.keymap.set( "n", "]g", "<Plug>(coc-diagnostic-next)", { silent = true } )
-vim.keymap.set( "n", "gd", "<Plug>(coc-definition)", { silent = true } )
-vim.keymap.set( "n", "gy", "<Plug>(coc-type-definition)", { silent = true } )
-vim.keymap.set( "n", "gi", "<Plug>(coc-implementation)", { silent = true } )
-vim.keymap.set( "n", "gr", "<Plug>(coc-references)", { silent = true } )
-vim.keymap.set( "v", "<leader>f", "<Plug>(coc-format-selected)", {} )
-vim.keymap.set( "n", "<leader>f", "<Plug>(coc-format-selected)", {} )
-vim.keymap.set( "n", "<space>a", ":<C-u>CocList diagnostics<cr>", { silent = true, nowait = true } )
+-- ---- LSP CONFIGURATION ----
+require( "mason" ).setup()
 
-function _G.show_docs()
-    local cw = vim.fn.expand( "<cword>" )
-    if vim.fn.index( { "vim", "help" }, vim.bo.filetype ) >= 0 then
-        vim.api.nvim_command( "h " .. cw )
-    elseif vim.api.nvim_eval( "coc#rpc#ready()" ) then
-        vim.fn.CocActionAsync( "doHover" )
-    else
-        vim.api.nvim_command( "!" .. vim.o.keywordprg .. " " .. cw )
+vim.lsp.config( "lua_ls", {
+    before_init = function( init_params, config )
+        init_params.initializationOptions = init_params.initializationOptions or {}
+        init_params.initializationOptions.storagePath = "~/.cache/luals"
     end
-end
-
-vim.keymap.set( "n", "K", "<CMD>lua _G.show_docs()<CR>", { silent = true } )
-
-vim.api.nvim_create_augroup( "CocGroup", {} )
-vim.api.nvim_create_autocmd( "CursorHold", {
-    group = "CocGroup",
-    command = "silent call CocActionAsync('highlight')",
-    desc = "Highlight symbol under cursor on CursorHold"
 } )
+vim.lsp.enable( "lua_ls" )
 
--- vim.g.loaded_netrw = 1
--- vim.g.loaded_netrwPlugin = 1
+-- local bufopts = { noremap = true, silent = true }
+vim.keymap.set( "n", "K", "<CMD>lua vim.lsp.buf.hover()<CR>", { silent = true } )
+-- vim.keymap.set( "n", "[g", vim.diagnostic.goto_prev, { silent = true } )
+-- vim.keymap.set( "n", "]g", vim.diagnostic.goto_next, { silent = true } )
+-- vim.keymap.set( "n", "gd", function() vim.cmd( "tab split | lua vim.lsp.buf.definition()" ) end, bufopts )
+-- vim.keymap.set( "n", "gy", vim.lsp.buf.type_definition, { silent = true } )
+-- vim.keymap.set( "n", "gi", vim.lsp.buf.implementation, { silent = true } )
+-- vim.keymap.set( "n", "gr", vim.lsp.buf.references, { silent = true } )
+vim.keymap.set( "v", "<leader>f", function() vim.lsp.buf.format( { async = true } ) end, bufopts )
+vim.keymap.set( "n", "<leader>f", function() vim.lsp.buf.format( { async = true } ) end, bufopts )
+-- ---- END LSP CONFIGURATION ----
+
+-- ---- AUTOCOMPLETION CONFIGURATION ----
+local cmp = require( "cmp" )
+
+require( "luasnip.loaders.from_vscode" ).lazy_load()
+
+cmp.setup( {
+    snippet = {
+        expand = function( args )
+            require( "luasnip" ).lsp_expand( args.body )
+        end,
+    },
+    mapping = cmp.mapping.preset.insert( {
+        ["<C-b>"] = cmp.mapping.scroll_docs( -4 ),
+        ["<C-f>"] = cmp.mapping.scroll_docs( 4 ),
+        ["<C-Space>"] = cmp.mapping.complete(),
+        ["<C-e>"] = cmp.mapping.abort(),
+        ["<CR>"] = cmp.mapping.confirm( { select = true } ),
+    }),
+    sources = cmp.config.sources({
+        { name = "nvim_lsp" },
+        { name = "luasnip" },
+    }, {
+        { name = "buffer" },
+    })
+})
+-- ---- END AUTOCOMPLETION CONFIGURATION ----
+
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
 
 require( "lualine" ).setup( {
     options = {
@@ -267,34 +286,27 @@ require( "lualine" ).setup( {
             {
                 "diagnostics",
 
-                -- Table of diagnostic sources, available sources are:
-                --   "nvim_lsp", "nvim_diagnostic", "nvim_workspace_diagnostic", "coc", "ale", "vim_lsp".
-                -- or a function that returns a table as such:
-                --   { error=error_cnt, warn=warn_cnt, info=info_cnt, hint=hint_cnt }
-                sources = { "ale", "coc", "nvim_lsp" },
+                sources = { "nvim_lsp" },
 
-                -- Displays diagnostics for the defined severity types
                 sections = { "error", "warn", "info", "hint" },
 
                 diagnostics_color = {
-                    -- Same values as the general color option can be used here.
-                    error = "DiagnosticError", -- Changes diagnostics" error color.
-                    warn  = "DiagnosticWarn",  -- Changes diagnostics" warn color.
-                    info  = "DiagnosticInfo",  -- Changes diagnostics" info color.
-                    hint  = "DiagnosticHint",  -- Changes diagnostics" hint color.
+                    error = "DiagnosticError",
+                    warn  = "DiagnosticWarn",
+
+                    info  = "DiagnosticInfo",
+                    hint  = "DiagnosticHint",
                 },
 
                 symbols = { error = "E", warn = "W", info = "I", hint = "H" },
-                colored = true,           -- Displays diagnostics status in color if set to true.
-                update_in_insert = false, -- Update diagnostics in insert mode.
-                always_visible = false,   -- Show diagnostics even if there are none.
+                colored = true,
+                update_in_insert = false,
+                always_visible = false,
             }
         }
     }
 } )
 
-
--- For barbar?
 require( "bufferline" ).setup( {
     animation = true,
     auto_hide = true,
@@ -311,33 +323,17 @@ vim.keymap.set( "n", "<C-o>", "<Cmd>BufferPick<CR>", { noremap = true, silent = 
 vim.keymap.set( "n", "<C-h>", "<Cmd>BufferPrevious<CR>", { noremap = true, silent = true } )
 vim.keymap.set( "n", "<C-l>", "<Cmd>BufferNext<CR>", { noremap = true, silent = true } )
 
-local function open_nvim_tree(data)
+local function on_stderr( _, data )
+    if not data then return end
+    if #data == 0 then return end
+    if #data == 1 and #data[1] == 0 then return end
 
-  -- buffer is a directory
-  local directory = vim.fn.isdirectory(data.file) == 1
-
-  if not directory then
-    return
-  end
-
-  -- create a new, empty buffer
-  vim.cmd.enew()
-
-  -- wipe the directory buffer
-  vim.cmd.bw(data.buf)
-
-  -- change to the directory
-  vim.cmd.cd(data.file)
-
-  -- open the tree
-  require("nvim-tree.api").tree.open()
+    print( table.concat( data, "\n" ) )
+    vim.api.nvim_err_writeln( "Error pulling glua-api-snippets (:messages to see output)" )
 end
 
-vim.api.nvim_create_autocmd({ "VimEnter" }, { callback = open_nvim_tree })
+vim.fn.jobstart(
+    "timeout --signal=KILL 10s git pull --quiet --recurse-submodules --no-rebase origin lua-language-server-addon",
+    { cwd = "/home/brandon/.cache/luals/addonManager/addons/garrysmod/module/glua-api-snippets", on_stderr = on_stderr }
+)
 
--- Require leap and set its primary keybind to "r"
-require( "leap" )
-vim.keymap.set( "n",          "r", "<Plug>(leap)" )
-vim.keymap.set( "n",          "R", "<Plug>(leap-from-window)" )
-vim.keymap.set( { "x", "o" }, "r", "<Plug>(leap-forward)" )
-vim.keymap.set( { "x", "o" }, "R", "<Plug>(leap-backward)" )
