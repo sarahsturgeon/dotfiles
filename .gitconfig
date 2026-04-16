@@ -1,10 +1,10 @@
 [user]
-    name = Brandon Sturgeon
-    email = brandon@brandonsturgeon.com
-	signingKey = C712126B61298BBB09687B67CD49ADA212A5D381
+    name = Sarah Sturgeon
+    email = sarah@sarahsturgeon.com
+    signingKey = AEAF264B98D39BC6
 [core]
     editor = nvim
-	excludesfile = /home/brandon/.gitignore
+    excludesfile = /Users/sarah/.gitignore
 [alias]
     a = add
     b = branch
@@ -62,6 +62,8 @@
     branch-name = rev-parse --abbrev-ref HEAD
 
 [commit]
-	gpgsign = true
+    gpgsign = true
 [init]
-	defeaultBranch = main
+    defaultBranch = main
+[diff]
+    external = difft

@@ -12,6 +12,7 @@ fi
 alias cls='clear'
 
 # LS aliases
+alias ls=eza
 alias lf='ls -alF'
 alias ll='ls -alh'
 alias la='ls -A'
