@@ -37,8 +37,6 @@ plugins=(
     docker
     docker-compose
     # extract
-    ripgrep
-    ubuntu
     #vi-mode
 )
 
@@ -115,23 +113,23 @@ unset env
 GPG_TTY=$(tty)
 export GPG_TTY
 
-source /usr/share/doc/fzf/examples/key-bindings.zsh
-source /usr/share/doc/fzf/examples/completion.zsh
-
 export PATH=/home/brandon/.local/bin:$PATH
-eval "$(zoxide init zsh)"
 
 # Fix "Directory writable to others, no sticky bit" background colors
 export LS_COLORS="${LS_COLORS}:ow=32;40"
 
 ## END CUSTOM CONFIGURATION
 
+export COLIMA_VM="default"
+export COLIMA_VM_SOCKET="${HOME}/.colima/${COLIMA_VM}/docker.sock"
+export DOCKER_HOST="unix://${COLIMA_VM_SOCKET}"
+
 
 ## BEGIN PATH MODIFICATION
 export PATH=/opt/local/bin:$PATH
 
-source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 export PATH="/usr/local/opt/openssl/bin:$PATH"
 export PATH=$PATH:/usr/local/go/bin
 export VOLTA_HOME="$HOME/.volta"
 export PATH="$VOLTA_HOME/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
