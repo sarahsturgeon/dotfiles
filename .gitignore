@@ -20,6 +20,7 @@
 .zprofile
 .zsh_history
 .zshenv
+.bash_functions.local
 
 # OSX
 Applications

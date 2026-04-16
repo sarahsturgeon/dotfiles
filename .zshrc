@@ -82,6 +82,11 @@ if [ -f ~/.bash_functions ]; then
     . ~/.bash_functions
 fi
 
+# Custom functions (local, untracked)
+if [ -f ~/.bash_functions.local ]; then
+    . ~/.bash_functions.local
+fi
+
 # Automatically 'ls -F' after every CD
 [ -z "$PS1" ] && return
 function cd {
