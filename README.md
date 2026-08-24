@@ -51,7 +51,7 @@ source ~/.profile ~/.zshrc
 
 ## Tools
 
-### [exa](https://github.com/ogham/exa#installation)
+### [eza](https://github.com/eza-community/eza#installation)
 - `ls` replacement
 
 ### [ripgrep](https://github.com/BurntSushi/ripgrep) :mag_right:
