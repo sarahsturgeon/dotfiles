@@ -54,6 +54,8 @@ source ~/.profile ~/.zshrc
 ### `tree-sitter`
 - `brew install tree-sitter tree-sitter-cli`
 
+### [difftastic](https://github.com/wilfred/difftastic)
+
 ### [eza](https://github.com/eza-community/eza#installation)
 - `ls` replacement
 
