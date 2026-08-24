@@ -24,13 +24,55 @@ local plugins = {
     -- LSP
     { "mason-org/mason.nvim", opts = {} },
     {
+        "mason-org/mason-lspconfig.nvim",
+        dependencies = { "mason-org/mason.nvim" },
+        opts = {
+            ensure_installed = { "lua_ls", "pyright", "vtsls" },
+            automatic_enable = false,
+        },
+    },
+    {
         "neovim/nvim-lspconfig",
-        dependencies = { "saghen/blink.cmp" },
+        -- mason (via mason-lspconfig) must load first so its bin dir is on PATH
+        -- before vim.lsp.enable below starts servers (pyright-langserver lives there).
+        dependencies = { "saghen/blink.cmp", "mason-org/mason-lspconfig.nvim" },
         config = function()
             vim.lsp.config( "*", {
                 capabilities = require( "blink.cmp" ).get_lsp_capabilities(),
             } )
-            vim.lsp.enable( { "vtsls", "pyright", "lua_ls" } )
+
+            -- Let pyright own hover
+            vim.lsp.config( "ruff", {
+                on_attach = function( client )
+                    client.server_capabilities.hoverProvider = false
+                end,
+            } )
+
+            vim.lsp.config( "pyright", {
+                root_dir = function( bufnr, on_dir )
+                    local home = vim.uv.os_homedir()
+                    local fname = vim.api.nvim_buf_get_name( bufnr )
+                    local markers = {
+                        "pyrightconfig.json", "pyproject.toml",
+                        "setup.py", "setup.cfg", "requirements.txt", "Pipfile",
+                    }
+                    local found = vim.fs.find(
+                        markers,
+                        { path = vim.fs.dirname( fname ), upward = true, stop = home }
+                    )[1]
+                    local dir = found and vim.fs.dirname( found ) or vim.fs.dirname( fname )
+                    on_dir( dir ~= home and dir or nil )
+                end,
+            } )
+            vim.lsp.enable( { "vtsls", "pyright", "ruff", "lua_ls" } )
+
+            vim.schedule( function()
+                for _, buf in ipairs( vim.api.nvim_list_bufs() ) do
+                    if vim.api.nvim_buf_is_loaded( buf ) and vim.bo[ buf ].filetype ~= "" then
+                        vim.api.nvim_exec_autocmds( "FileType", { buffer = buf, modeline = false } )
+                    end
+                end
+            end )
         end,
     },
 
@@ -144,26 +186,29 @@ local plugins = {
             vim.keymap.set( "n", "<C-p>", "<cmd>Telescope live_grep<CR>", { desc = "Live Grep" } )
         end
     },
+
     { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
+
     {
         "nvim-treesitter/nvim-treesitter",
+        branch = "master",
         lazy = false,
         build = ":TSUpdate",
         config = function()
-            require( "nvim-treesitter" ).install( {
-                "javascript", "typescript", "tsx", "html", "css",
-                "svelte", "astro", "terraform", "markdown", "markdown_inline",
-                "ruby", "python", "lua", "json", "yaml", "bash",
-            } )
-
-            vim.api.nvim_create_autocmd( "FileType", {
-                callback = function()
-                    pcall( vim.treesitter.start )
-                    vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
-                end,
+            require( "nvim-treesitter.configs" ).setup( {
+                ensure_installed = {
+                    "javascript", "typescript", "tsx", "html", "css",
+                    "svelte", "astro", "terraform", "markdown", "markdown_inline",
+                    "ruby", "python", "lua", "json", "yaml", "bash",
+                },
+                sync_install = false,
+                auto_install = true,
+                highlight = { enable = true },
+                indent = { enable = true },
             } )
         end
     },
+
     { "wuelnerdotexe/vim-astro",                  ft = "astro" },
     { "leafo/moonscript-vim",                     ft = "moonscript" },
     { "slim-template/vim-slim",                   ft = "slim" },
@@ -175,6 +220,7 @@ local plugins = {
     { "petertriho/nvim-scrollbar",                event = "BufReadPost" },
     { "tpope/vim-sleuth",                         event = "InsertEnter" },
     { "tpope/vim-fugitive",                       event = "BufWritePost" },
+
     {
         "lewis6991/gitsigns.nvim",
         event = "BufReadPre",
@@ -300,6 +346,21 @@ for _, autocmd in pairs( autocmds ) do
 end
 
 vim.opt.tags = "tags"
+
+-- Python: format + organize imports via Ruff on save
+vim.api.nvim_create_autocmd( "BufWritePre", {
+    pattern = "*.py",
+    callback = function()
+        vim.lsp.buf.code_action( {
+            context = { only = { "source.organizeImports.ruff" }, diagnostics = {} },
+            apply = true,
+        } )
+        vim.lsp.buf.format( {
+            async = false,
+            filter = function( client ) return client.name == "ruff" end,
+        } )
+    end,
+} )
 
 -- ---- LSP KEYBINDINGS ----
 local bufopts = { noremap = true, silent = true }
