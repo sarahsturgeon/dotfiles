@@ -6,16 +6,20 @@
 
 ### [ZSH](https://github.com/ohmyzsh/ohmyzsh/wiki/Installing-ZSH)
 
+### [OhMyZSH](https://ohmyz.sh/#install)
+
 ---
 
 ### Git
 ```bash
 ssh-keygen -o -a 100 -t ed25519 -f ~/.ssh/id_ed25519 -C "sarah@sarahsturgeon.com"
 # Default location, no password
-cat ~/.ssh/id_ed25519.pub;
-# Copy ssh id
-# visit https://github.com/settings/keys, add the new key to profile
+
+cat ~/.ssh/id_ed25519.pub | { command -v pbcopy >/dev/null && pbcopy && echo "copied to clipboard"; }
 ```
+
+Visit https://github.com/settings/keys to add the new key to your profile
+
 
 ---
 
