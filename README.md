@@ -51,6 +51,9 @@ source ~/.profile ~/.zshrc
 
 ## Tools
 
+### `tree-sitter`
+- `brew install tree-sitter tree-sitter-cli`
+
 ### [eza](https://github.com/eza-community/eza#installation)
 - `ls` replacement
 
