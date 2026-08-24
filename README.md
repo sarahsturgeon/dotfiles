@@ -51,6 +51,9 @@ source ~/.profile ~/.zshrc
 
 ## Tools
 
+### [exa](https://github.com/ogham/exa#installation)
+- `ls` replacement
+
 ### [ripgrep](https://github.com/BurntSushi/ripgrep) :mag_right:
 - Absolute necessity for finding stuff easily
 
