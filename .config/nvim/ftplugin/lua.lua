@@ -1,6 +1,3 @@
--- treesitter indent is broken for lua, just use vim's default
-vim.bo.indentexpr = ""
-
 local home = vim.env.HOME
 
 vim.lsp.config( "lua_ls", {

@@ -33,8 +33,6 @@ local plugins = {
     },
     {
         "neovim/nvim-lspconfig",
-        -- mason (via mason-lspconfig) must load first so its bin dir is on PATH
-        -- before vim.lsp.enable below starts servers (pyright-langserver lives there).
         dependencies = { "saghen/blink.cmp", "mason-org/mason-lspconfig.nvim" },
         config = function()
             vim.lsp.config( "*", {
@@ -191,20 +189,26 @@ local plugins = {
 
     {
         "nvim-treesitter/nvim-treesitter",
-        branch = "master",
+        branch = "main",
         lazy = false,
         build = ":TSUpdate",
         config = function()
-            require( "nvim-treesitter.configs" ).setup( {
-                ensure_installed = {
-                    "javascript", "typescript", "tsx", "html", "css",
-                    "svelte", "astro", "terraform", "markdown", "markdown_inline",
-                    "ruby", "python", "lua", "json", "yaml", "bash",
-                },
-                sync_install = false,
-                auto_install = true,
-                highlight = { enable = true },
-                indent = { enable = true },
+            require( "nvim-treesitter" ).setup()
+
+            require( "nvim-treesitter" ).install( {
+                "javascript", "typescript", "tsx", "html", "css",
+                "svelte", "astro", "terraform", "markdown", "markdown_inline",
+                "ruby", "python", "lua", "json", "yaml", "bash",
+            } )
+
+            vim.api.nvim_create_autocmd( "FileType", {
+                group = vim.api.nvim_create_augroup( "treesitter_highlight", { clear = true } ),
+                callback = function( ev )
+                    local lang = vim.treesitter.language.get_lang( ev.match )
+                    if not lang then return end
+                    if not pcall( vim.treesitter.language.add, lang ) then return end
+                    pcall( vim.treesitter.start, ev.buf, lang )
+                end,
             } )
         end
     },
@@ -218,7 +222,7 @@ local plugins = {
     { "google/vim-searchindex",                   event = "BufReadPost" },
     { "mg979/vim-visual-multi",                   event = "BufReadPost" },
     { "petertriho/nvim-scrollbar",                event = "BufReadPost" },
-    { "tpope/vim-sleuth",                         event = "InsertEnter" },
+    { "tpope/vim-sleuth",                         lazy = false },
     { "tpope/vim-fugitive",                       event = "BufWritePost" },
 
     {
@@ -329,7 +333,9 @@ hi Normal guibg=NONE ctermbg=NONE
 
 
 local autocmds = {
-    { event = "FileType", pattern = "html,ruby,javascript,typescript,javascriptreact,typescriptreact,svelte", cmd = "setlocal ts=2 sts=2 sw=2" },
+    -- ts=2 is only a default; :Sleuth runs last so the file's own
+    -- indent width (and any .editorconfig) wins when it can be detected.
+    { event = "FileType", pattern = "html,ruby,javascript,typescript,javascriptreact,typescriptreact,svelte", cmd = "setlocal ts=2 sts=2 sw=2 | silent! Sleuth" },
     { event = "FileType", pattern = "python",                                         cmd = "setlocal ts=4 sts=4 sw=4 tw=0" },
     { event = "FileType", pattern = "css,yaml",                                       cmd =
     "setlocal ts=2 sts=2 sw=2 expandtab" }

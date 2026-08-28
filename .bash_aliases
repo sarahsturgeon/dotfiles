@@ -51,3 +51,6 @@ alias rgd="rg -L --max-depth 50"
 
 # Easy tagging script
 alias tagr="$HOME/_scripts/tagger.sh"
+
+# Claude Code with personal account
+alias myclaude='CLAUDE_CONFIG_DIR="$HOME/.claude-personal" claude'

@@ -8,6 +8,7 @@
 .claude.json*
 .claude
 !.claude/CLAUDE.md
+.claude-personal
 .config/github-copilot
 .docker
 .npm
@@ -38,3 +39,5 @@ Public
 .DS_Store
 .colima/
 .config/raycast/
+.config/1Password/
+.aptible
