@@ -199,6 +199,7 @@ local plugins = {
                 "javascript", "typescript", "tsx", "html", "css",
                 "svelte", "astro", "terraform", "markdown", "markdown_inline",
                 "ruby", "python", "lua", "json", "yaml", "bash",
+                "jsdoc", "comment",
             } )
 
             vim.api.nvim_create_autocmd( "FileType", {
@@ -208,6 +209,14 @@ local plugins = {
                     if not lang then return end
                     if not pcall( vim.treesitter.language.add, lang ) then return end
                     pcall( vim.treesitter.start, ev.buf, lang )
+
+                    -- treesitter.start() sets syntax='', which makes synID()
+                    -- return 0. The runtime indent files for ts/js/ruby/html/css
+                    -- use synID() to detect comments and strings, so without
+                    -- regex syntax they misindent (TSDoc blocks especially).
+                    if vim.bo[ ev.buf ].syntax == "" then
+                        vim.bo[ ev.buf ].syntax = ev.match
+                    end
                 end,
             } )
         end
@@ -224,6 +233,178 @@ local plugins = {
     { "petertriho/nvim-scrollbar",                event = "BufReadPost" },
     { "tpope/vim-sleuth",                         lazy = false },
     { "tpope/vim-fugitive",                       event = "BufWritePost" },
+    {
+        "mistricky/codesnap.nvim",
+        tag = "v2.0.5",
+        cmd = { "CodeSnap", "CodeSnapSave", "CodeSnapASCII", "CodeSnapHighlight" },
+        keys = {
+            { "<leader>cs", ":CodeSnap<CR>", mode = "x", silent = true, desc = "CodeSnap to clipboard + file" },
+            { "<leader>ch", ":CodeSnapHighlight<CR>", mode = "x", silent = true, desc = "CodeSnap with highlights" },
+        },
+        config = function( _, opts )
+            require( "codesnap" ).setup( opts )
+
+            local module = require( "codesnap.module" )
+            local config_module = require( "codesnap.config" )
+
+            -- codesnap appends "libs/?" (and the raw .so path) to package.cpath,
+            -- which matches *any* module name and breaks other native requires
+            local function strip_cpath()
+                package.cpath = table.concat( vim.tbl_filter( function( p )
+                    return not p:find( "codesnap.nvim", 1, true )
+                end, vim.split( package.cpath, ";" ) ), ";" )
+            end
+
+            local load_generator = module.load_generator
+
+            module.load_generator = function( ... )
+                local generator = load_generator( ... )
+                strip_cpath()
+                return generator
+            end
+
+            strip_cpath()
+
+            -- Breadcrumbs: "<git root name>/<path from git root>"
+            local get_config = config_module.get_config
+            config_module.get_config = function()
+                local config = get_config()
+                local file = vim.api.nvim_buf_get_name( 0 )
+                local root = file ~= "" and vim.fs.root( file, ".git" ) or nil
+
+                if root and root ~= vim.uv.os_homedir() then
+                    config.content.file_path = vim.fs.basename( root ) .. "/" .. file:sub( #root + 2 )
+                else
+                    config.content.file_path = vim.fn.fnamemodify( file, ":~" )
+                end
+
+                local lines = vim.split( config.content.content, "\n", { plain = true } )
+                local longest, width = 1, 0
+
+                for i, line in ipairs( lines ) do
+                    local w = vim.fn.strdisplaywidth( line )
+                    if w > width then longest, width = i, w end
+                end
+
+                lines[ longest ] = lines[ longest ] .. string.rep( " ", math.ceil( width * 0.08 ) + 2 )
+                config.content.content = table.concat( lines, "\n" )
+
+                return config
+            end
+
+            -- Save to disk
+            local generator = module.load_generator()
+            local copy = generator.copy
+            generator.copy = function( config )
+                copy( config )
+
+                local dir = vim.fn.expand( "~/Desktop/Screenshots/CodeSnap" )
+                vim.fn.mkdir( dir, "p" )
+
+                local base = dir .. "/" .. os.date( "%Y-%m-%d_%H-%M-%S" )
+                local path, n = base .. ".png", 1
+
+                while vim.uv.fs_stat( path ) do
+                    n = n + 1
+                    path = base .. "-" .. n .. ".png"
+                end
+
+                generator.save( path, config )
+
+                vim.notify( "CodeSnap saved to " .. vim.fn.fnamemodify( path, ":~" ) )
+            end
+        end,
+
+        opts = {
+            show_line_number = true,
+            show_workspace = true,
+            -- #ffffff14 pre-blended onto the #1e1e2e code background
+            highlight_color = "#30303e",
+
+            diff_config = {
+                -- #98C37960 / #E06C7550 pre-blended onto #1e1e2e
+                add_color = "#4c5c4a",
+                delete_color = "#5b3744",
+            },
+
+            snapshot_config = {
+                theme = "tokyonight_moon_mocha_bg",
+                window = {
+                    mac_window_bar = false,
+
+                    shadow = {
+                        radius = 20,
+                        color = "#000000",
+                    },
+
+                    margin = {
+                        x = 33,
+                        y = 33,
+                    },
+
+                    border = {
+                        width = 1,
+                        color = "#ffffff30",
+                    },
+
+                    title_config = {
+                        color = "#ffffff",
+                        font_family = "FiraCode Nerd Font Mono",
+                    },
+
+                    radius = 12,
+                },
+
+                themes_folders = { vim.fn.stdpath( "config" ) .. "/codesnap/themes" },
+                fonts_folders = { "~/Library/Fonts" },
+                line_number_color = "#3b4261",
+
+                command_output_config = {
+                    prompt = "❯",
+                    font_family = "FiraCode Nerd Font Mono",
+                    prompt_color = "#F78FB3",
+                    command_color = "#98C379",
+                    string_arg_color = "#ff0000",
+                },
+
+                code_config = {
+                    font_family = "FiraCode Nerd Font Mono",
+                    breadcrumbs = {
+                        enable = true,
+                        separator = "/",
+                        -- tokyonight moon Comment
+                        color = "#636da6",
+                        font_family = "FiraCode Nerd Font Mono",
+                    },
+                },
+
+                watermark = {
+                    content = "",
+                    font_family = "FiraCode Nerd Font Mono",
+                    color = "#ffffff",
+                },
+
+                background = {
+                    start = {
+                        x = 0,
+                        y = 0,
+                    },
+                    [ "end" ] = {
+                        x = "max",
+                        y = "max",
+                    },
+                    stops = {
+                        { position = 0,    color = "#5BCEFA" },
+                        { position = 0.22, color = "#F5A9B8" },
+                        { position = 0.4,  color = "#FDF1F4" },
+                        { position = 0.6,  color = "#FDF1F4" },
+                        { position = 0.78, color = "#F5A9B8" },
+                        { position = 1,    color = "#75D3F8" },
+                    },
+                },
+            },
+        },
+    },
 
     {
         "lewis6991/gitsigns.nvim",
@@ -329,7 +510,11 @@ hi SpellBad cterm=underline ctermfg=9
 hi SignColumn guibg=none ctermbg=none
 
 hi Normal guibg=NONE ctermbg=NONE
+
+hi NormalFloat guibg=#191b29
+hi FloatBorder guifg=#589ed7 guibg=#191b29
 ]] )
+vim.o.winborder = "rounded"
 
 
 local autocmds = {
